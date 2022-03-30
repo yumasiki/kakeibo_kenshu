@@ -1,0 +1,8 @@
+Django の CRUD ジェネリックビュー (ListView, DetailView, CreateView, UpdateView, DeleteView) の簡単な使い方
+https://tech.torico-corp.com/blog/django-crud-generic-view/
+
+【Pandas】groupby/pivot_tableでのカテゴリー集計方法
+https://brainsnacks.org/data-group/
+
+DjangoでPandas（DataFrame)を活用する方法
+https://sinyblog.com/django/django-pandas/

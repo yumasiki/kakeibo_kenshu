@@ -1,0 +1,18 @@
+{% load kakeibo %}
+<div class="pagination mt-5">
+  <span class="step-links">
+    {% if page_obj.has_previous %}
+    <a class="mr2 prev" href="?{% url_replace request 'page' 1 %}">&laquo; 最初のページ</a>
+    <a class="mr2 prev" href="?{% url_replace request 'page' page_obj.previous_page_number %}">前ページへ</a>
+    {% endif %}
+
+    <span class="current">
+      Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}.
+    </span>
+
+    {% if page_obj.has_next %}
+    <a class="ml2 next" href="?{% url_replace request 'page' page_obj.next_page_number %}">次ページへ</a>
+    <a class="ml2 next" href="?{% url_replace request 'page' page_obj.paginator.num_pages %}">最後のページ &raquo;</a>
+    {% endif %}
+  </span>
+</div>

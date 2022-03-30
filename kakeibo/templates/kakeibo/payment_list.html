@@ -1,0 +1,70 @@
+{% extends "kakeibo/base.html" %}
+{% load humanize %}
+{% load kakeibo %}
+{% block content %}
+
+<!--検索フォーム-->
+<form class="mt-2" id="search-form" action="" method="GET">
+  <div>
+    <label class="label mr-4">年月</label>
+    {{ search_form.year }}
+    {{ search_form.month }}
+  </div>
+  <div class="mt-4">
+    <label class="label mr-4">金額</label>
+    {{ search_form.greater_than }}
+    <span class="ml-4 mr-4">～</span>
+    {{ search_form.less_than }}
+  </div>
+  <div class="mt-4">
+    {{ search_form.key_word }}
+    <button class="btn btn-info ml-4" type="submit">検索</button>
+  </div>
+  <div class="mt-2 inline">
+    {{ search_form.category }}
+  </div>
+</form>
+
+<!--追加　表示件数-->
+<p class="search-result mt-3">{{ page_obj.paginator.count }}件の検索結果</p>
+
+<table class="table mt-3">
+  <tr>
+    <th>日付</th>
+    <th>カテゴリ</th>
+    <th>金額</th>
+    <th>摘要</th>
+    <th>編集</th>
+  </tr>
+
+  <!--urls.pyファイル内でname="payment_list"と
+    逆からの参照ができるようにしていたものをinに利用している-->
+  {% for payment in payment_list %}
+
+  <tr>
+    <td>{{ payment.date }}</td>
+    <td>{{ payment.category }}</td>
+    <td>{{ payment.price|intcomma}}</td>
+    <td>
+      {% if payment.description %}
+      {{ payment.description }}
+      {% endif %}
+    </td>
+    <td>
+      <div class="manage-btn-area">
+        <div class="update-btn-area">
+          <a class="btn btn-info" href="{% url 'kakeibo:payment_update' payment.pk %}">更新</a>
+        </div>
+        <div class="delete-btn-area">
+          <a class="btn btn-danger" href="{% url 'kakeibo:payment_delete' payment.pk %}">削除</a>
+        </div>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<!-- ページネーション -->
+{% include 'kakeibo/include/pagination.html' %}
+
+{% endblock %}
