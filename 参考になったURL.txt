@@ -26,3 +26,6 @@ https://zenn.dev/driller/articles/6c048f953c2bc71916fb
 
 ➡return fig.to_html(include_plotlyjs=False)の部分の意味
 figure オブジェクトをHTMLに出力するには to_html メソッドを実行します(❷)。plotly.pyは plotly.js が元になったラッパーで、HTMLにはJavaScriptが含まれますが、後述するCDNを利用するため、引数 include_plotlyjs を False にしてJavaScript部分以外を出力します。
+
+get、get_queryset、get_context_dataの違いについて
+https://teratail.com/questions/118626
