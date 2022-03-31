@@ -15,7 +15,7 @@ class PaymentList(ListView):
     template_name = "kakeibo/payment_list.html"
     model = Payment
     ordering = "-date"
-    paginate_by = 5
+    paginate_by = 10
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -132,6 +132,13 @@ class PaymentCategoryCreate(CreateView):
 
     def get_success_url(self):
         return reverse_lazy('kakeibo:payment_list')
+    
+    def form_valid(self, form):
+        self.object = payment_category = form.save()
+        messages.info(self.request,
+                    f'カテゴリを追加しました\n'
+                    f'カテゴリ:{payment_category.name}')
+        return redirect(self.get_success_url())
 
 class IncomeCreate(CreateView):
     """収入登録"""
@@ -223,11 +230,7 @@ class PaymentDelete(DeleteView):
         self.object = payment = self.get_object()
 
         payment.delete()
-        messages.info(self.request,
-                      f'支出を削除しました\n'
-                      f'日付:{payment.date}\n'
-                      f'カテゴリ:{payment.category}\n'
-                      f'金額:{payment.price}円')
+
         return redirect(self.get_success_url())
 
 
@@ -248,11 +251,7 @@ class IncomeDelete(DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = income = self.get_object()
         income.delete()
-        messages.info(self.request,
-                      f'収入を削除しました\n'
-                      f'日付:{income.date}\n'
-                      f'カテゴリ:{income.category}\n'
-                      f'金額:{income.price}円')
+
         return redirect(self.get_success_url())
 
 class MonthDashboard(TemplateView):
@@ -265,6 +264,7 @@ class MonthDashboard(TemplateView):
 
     context = super().get_context_data(**kwargs)
     ですべてのコンテキスト内のデータを集めきっている。
+    urls.pyで引数に渡されているyear,monthのデータも、そのうちの一つ。
     """
 
     def get_context_data(self, **kwargs):
@@ -296,37 +296,38 @@ class MonthDashboard(TemplateView):
 
         # paymentモデルをdfにする.
         #年➡月の順にデータをフィルタリング
-        queryset = Payment.objects.filter(date__year=year)
-        queryset = queryset.filter(date__month=month)
-         
-        # クエリセットが何もない時はcontextを返す
-        # 後の工程でエラーになるため
-        if not queryset:
-            return context
+        pay_queryset = Payment.objects.filter(date__year=year)
+        pay_queryset = pay_queryset.filter(date__month=month)
+        
+        income_queryset = Income.objects.filter(date__year=year)
+        income_queryset = income_queryset.filter(date__month=month)
 
-        else:
-            """まずdjango-pandasのread_frameを使ってモデルをpandasデータフレーム化しています。
-            pandasデータフレームにすると、集計の処理や、グラフ生成の素材を簡単に作っていくことができます。
-            円グラフの素材はカテゴリーのリストと、対応する金額が必要です。
-            クエリセットから読み取ったdfは以下のような形となっています。
-                    date   price      category
-            0  2021-07-02   1191       食費
-            1  2021-07-02   1116       食費
-            2  2021-07-04   1003       食費
-            3  2021-07-05    980       クレジット
-            4  2021-07-05   1103       食費
-            ...
-            """
-            df = read_frame(queryset, fieldnames=["date", "price", "category"])
-            print(df)
+        # income、payそれぞれのクエリセットがある時ない時で場合分けをし、contextを返す
+        # 後の工程でエラーになるため
+        if not pay_queryset and not income_queryset:
+            context['total_payment'] = 0
+            context['total_income'] = 0
+            context['total_savings'] = 0
+            return context
+        
+        elif not pay_queryset and income_queryset:
+            df_income = read_frame(income_queryset, fieldnames=["date", "price", "category"])
+            context['total_income'] = df_income['price'].sum()
+            context['total_payment'] = 0
+            context['total_savings'] = df_income['price'].sum()
+            return context
+        
+        elif pay_queryset and not income_queryset:
+            df_pay = read_frame(pay_queryset, fieldnames=["date", "price", "category"])
+            
+            print(df_pay)
+            
             #グラフ作成クラスをインスタンス化
-            gen = GraphGenerator()
+            #gen = GraphGenerator()
 
             #pieチャートの素材を作成
-            """このままだと使えないので、カテゴリー毎に金額をpivot集計(カテゴリごとにまとめる）します。
-            これもpandasのpd.pivot_tableを使うと簡単?
-            aggfunc=np.sumはおそらく合計を算出する。
-            以下のようになる。
+            """このままだと使えないので、カテゴリー毎に金額をpivot集計(カテゴリごとにまとめる）します。aggfunc=np.sumは合計を算出する。
+            以下、イメージ例
                             price
             category
             クレジット       9780
@@ -334,29 +335,77 @@ class MonthDashboard(TemplateView):
             水道光熱 / 通信  28824
             食費             54694
             """
-            df_pie = pd.pivot_table(df,index="category", values="price", aggfunc=np.sum)
-            
-            """カテゴリーの情報はdf.index.valuesで取り出せますし、金額の情報はdf.valuesで取り出せます。ただし、plotlyで使う場合はlist形式にする必要があるので、変換をかけています。"""
+            df_table_pay = pd.pivot_table(df_pay,index="category", values="price", aggfunc=np.sum)
+                        
+            #テーブルでのカテゴリと金額の表示用。
+            #｛カテゴリ：金額,　カテゴリ:金額・・・の辞書を作る。
+            #ダッシュボードではグラフだけでなく、金額の詳細も見たいので、この辞書を渡しています。
+            context['table_set_pay'] = df_table_pay.to_dict()['price']
 
-            pie_labels = list(df_pie.index.values)
-            pie_values = [val[0] for val in df_pie.values]
+            # totalの数字を計算して渡す
+            context['total_payment'] = df_pay['price'].sum()
+            context['total_income'] = 0
+            context['total_savings'] = 0 - df_pay['price'].sum()
+
+
+            """以下、まだ上手く把握できていない部分。
+            カテゴリーの情報はdf.index.valuesで取り出せますし、金額の情報はdf.valuesで取り出せます。ただし、plotlyで使う場合はlist形式にする必要があるので、変換をかけています。
+
+            pie_labels = list(df_table_pay.index.values)
+            pie_values = [val[0] for val in df_table_pay.values]
             
             plot_pie = gen.month_pie(labels=pie_labels, values=pie_values)
             context['plot_pie'] = plot_pie
 
-            #テーブルでのカテゴリと金額の表示用。
-            #｛カテゴリ：金額,　カテゴリ:金額・・・の辞書を作る。
-            #ダッシュボードではグラフだけでなく、金額の詳細も見たいので、この辞書を渡しています。
-            context['table_set'] = df_pie.to_dict()['price']
-
-            # totalの数字を計算して渡す
-            context['total_payment'] = df['price'].sum()
-            """
+            
             #日別の棒グラフの素材を渡す
-            df_bar = pd.pivot_table(df, index="date", values='price', aggfunc=np.sum)
+            df_bar = pd.pivot_table(df_pay, index="date", values='price', aggfunc=np.sum)
             dates = list(df_bar.index.values)
             heights = [val[0] for val in df_bar.values]
             plot_bar = gen.month_daily_bar(x_list=dates, y_list=heights)
             context["plot_bar"] = plot_bar
             """
-        return context
+            return context
+        
+        else:
+            #django-pandasのread_frameを使ってモデルをpandasデータフレーム化
+            df_pay = read_frame(pay_queryset, fieldnames=["date", "price", "category"])
+            df_income = read_frame(income_queryset, fieldnames=["date", "price", "category"])
+            print(df_pay)
+            print(df_income)
+
+            #グラフ作成クラスをインスタンス化
+            #gen = GraphGenerator()
+
+            #pieチャートの素材を作成
+            #カテゴリー毎に金額をpivot集計(カテゴリごとにまとめる）します。
+            df_table_pay = pd.pivot_table(df_pay,index="category", values="price", aggfunc=np.sum)
+                        
+            #テーブルでのカテゴリと金額の表示用。
+            #｛カテゴリ：金額,　カテゴリ:金額・・・の辞書を作る。
+            #ダッシュボードではグラフだけでなく、金額の詳細も見たいため、この辞書を渡しています。
+            context['table_set_pay'] = df_table_pay.to_dict()['price']
+
+            # totalの数字を計算して渡す
+            context['total_payment'] = df_pay['price'].sum()
+            context['total_income'] = df_income['price'].sum()
+            context['total_savings'] = df_income['price'].sum() - df_pay['price'].sum()
+
+            """以下、まだ上手く把握できていない部分。
+            カテゴリーの情報はdf.index.valuesで取り出せますし、金額の情報はdf.valuesで取り出せます。ただし、plotlyで使う場合はlist形式にする必要があるので、変換をかけます。
+
+            pie_labels = list(df_table_pay.index.values)
+            pie_values = [val[0] for val in df_table_pay.values]
+            
+            plot_pie = gen.month_pie(labels=pie_labels, values=pie_values)
+            context['plot_pie'] = plot_pie
+
+            
+            #日別の棒グラフの素材を渡す
+            df_bar = pd.pivot_table(df_pay, index="date", values='price', aggfunc=np.sum)
+            dates = list(df_bar.index.values)
+            heights = [val[0] for val in df_bar.values]
+            plot_bar = gen.month_daily_bar(x_list=dates, y_list=heights)
+            context["plot_bar"] = plot_bar
+            """
+            return context

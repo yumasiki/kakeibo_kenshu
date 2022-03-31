@@ -20,15 +20,24 @@
         <th>カテゴリ</th>
         <th>金額</th>
       </tr>
-      {% for key,value in table_set.items %}
+      <!--keyはindexカラムに指定したカテゴリ、valueはpriceカラムのカテゴリごとの金額-->
+      {% for key,value in table_set_pay.items %}
       <tr>
         <td>{{ key }}</td>
         <td>{{ value|intcomma }}</td>
       </tr>
       {% endfor %}
       <tr>
-        <td>Total</td>
+        <td>支出合計</td>
         <td>{{ total_payment|intcomma }}</td>
+      </tr>
+      <tr>
+        <td>収入合計</td>
+        <td>{{ total_income|intcomma }}</td>
+      </tr>
+      <tr class="result-month">
+        <td>月間収支</td>
+        <td>{{ total_savings|intcomma }}</td>
       </tr>
     </table>
   </div>
@@ -37,9 +46,7 @@
   </div>
 </div>
 <div class="month-dash-bottom">
-  <div class="hidden_toolbar">
-    {{ plot_bar }}
-  </div>
+  {{ plot_bar }}
 </div>
 {% endautoescape %}
 

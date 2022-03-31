@@ -397,10 +397,7 @@ a.header-title {
   padding: 0 5%;
 }
 
-/* plotlyのツールバー非表示用 */
-.hidden_toolbar.modebar {
-  display: none !important;
-}
+
 
 /* --------------------------------
  * カード

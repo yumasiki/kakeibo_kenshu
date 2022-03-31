@@ -1,8 +1,28 @@
-Django の CRUD ジェネリックビュー (ListView, DetailView, CreateView, UpdateView, DeleteView) の簡単な使い方
+・【まとめ】Djangoで作る家計簿アプリ
+https://qlitre-weblog.com/django-kakeibo/
+
+・ドキュメント（django.contrib.humanize）
+https://docs.djangoproject.com/ja/4.0/ref/contrib/humanize/
+
+・URLパラメータとは？パラメータ使用URLでの注意点
+(urlについている？マークの意味はパラメータを渡す際につけるもの)
+https://www.seohacks.net/blog/988/
+
+・[Django]GenericViewでURLからパラメータをGETする方法
+（contextのイメージ）
+https://sleepless-se.net/2018/06/04/djangogenericview%e3%81%a7url%e3%81%8b%e3%82%89%e3%83%91%e3%83%a9%e3%83%a1%e3%83%bc%e3%82%bf%e3%82%92get%e3%81%99%e3%82%8b%e6%96%b9%e6%b3%95/
+
+・Django の CRUD ジェネリックビュー (ListView, DetailView, CreateView, UpdateView, DeleteView) の簡単な使い方
 https://tech.torico-corp.com/blog/django-crud-generic-view/
 
-【Pandas】groupby/pivot_tableでのカテゴリー集計方法
+・【Pandas】groupby/pivot_tableでのカテゴリー集計方法
 https://brainsnacks.org/data-group/
 
-DjangoでPandas（DataFrame)を活用する方法
+・DjangoでPandas（DataFrame)を活用する方法
 https://sinyblog.com/django/django-pandas/
+
+・DjangoにPlotlyのグラフを表示する
+https://zenn.dev/driller/articles/6c048f953c2bc71916fb
+
+➡return fig.to_html(include_plotlyjs=False)の部分の意味
+figure オブジェクトをHTMLに出力するには to_html メソッドを実行します(❷)。plotly.pyは plotly.js が元になったラッパーで、HTMLにはJavaScriptが含まれますが、後述するCDNを利用するため、引数 include_plotlyjs を False にしてJavaScript部分以外を出力します。
